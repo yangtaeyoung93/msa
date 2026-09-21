@@ -2,6 +2,7 @@ package com.example.msa.product.service;
 
 import com.example.msa.product.domain.Product;
 import com.example.msa.product.dto.ProductCreateRequest;
+import com.example.msa.product.dto.ProductUpdateRequest;
 import com.example.msa.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,31 +24,48 @@ public class ProductServiceImpl implements ProductService{
     @Transactional
     public Product create(ProductCreateRequest request) {
         Product.create(
-                toUuId
-        )
+                toUuid(request.sellerId(), "sellerId"),
+                request.name(),
+                request.description(),
+                request.price(),
+                request.stock(),
+                request.status(),
+                toUuid(request.creatorId(), "creatorId")
+        );
         return null;
     }
 
     @Override
     public Product getById(UUID productId) {
-        return null;
+        return findByIdOrThrow(productId);
     }
 
     @Override
     public List<Product> getAll() {
-        return null;
+        return productRepository.findAll();
     }
 
     @Override
     @Transactional
-    public Product update(UUID productId, ProductCreateRequest request) {
-        return null;
+    public Product update(UUID productId, ProductUpdateRequest request) {
+        Product product = findByIdOrThrow(productId);
+        product.update(
+                request.name(),
+                request.description(),
+                request.price(),
+                request.stock(),
+                request.status(),
+                toUuid(request.modifierId(),"modifierId")
+        );
+
+        return product;
     }
 
     @Override
     @Transactional
     public void delete(UUID productId) {
-
+        Product product = findByIdOrThrow(productId);
+        productRepository.delete(product);
     }
 
     private UUID toUuid(String value, String fieldName) {
@@ -56,5 +74,10 @@ public class ProductServiceImpl implements ProductService{
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must be valid UUID");
         }
+    }
+
+    private Product findByIdOrThrow(UUID productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
     }
 }
