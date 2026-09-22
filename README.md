@@ -142,3 +142,22 @@
 - Category Service(카테고리 조회) -> Product Service (상품 조회)
 
 - Notification Service(알림 발송 이력 조회)
+
+
+## 헥사고날 아키텍처 적용 이유
+
+### 1. in/out으로 요청과 응답 분리
+
+외부에서 들어오는 요청(in)과
+외부로 나가는 응답(out)의 흐름을 명확히 구분하여
+각 역할의 책임을 분리했습니다.
+
+adapter/in/web/   → 외부 요청 수신 (Controller, Request)
+adapter/out/      → 외부 시스템 호출 (DB, Kafka 등)
+
+### 2. 도메인이 외부 기술에 직접 의존하지 않도록 설계
+
+핵심 비즈니스 로직(domain)이
+JPA, REST API, Kafka 등 외부 기술에
+직접 의존하지 않도록 Port 인터페이스로 추상화했습니다.
+
