@@ -1,13 +1,13 @@
-package com.example.msa.product.service;
+package com.example.msa.product.application.port.in;
 
 import com.example.msa.product.domain.Product;
-import com.example.msa.product.dto.ProductCreateRequest;
-import com.example.msa.product.dto.ProductUpdateRequest;
+import com.example.msa.product.adapter.in.web.dto.ProductCreateRequest;
+import com.example.msa.product.adapter.in.web.dto.ProductUpdateRequest;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface ProductService {
+public interface ProductUseCase {
 
     Product create(ProductCreateRequest request);
 

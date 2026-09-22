@@ -1,4 +1,4 @@
-package com.example.msa.product.dto;
+package com.example.msa.product.adapter.in.web.dto;
 
 import java.math.BigDecimal;
 

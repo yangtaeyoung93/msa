@@ -1,10 +1,10 @@
-package com.example.msa.product.service;
+package com.example.msa.product.application.service;
 
+import com.example.msa.product.application.port.in.ProductUseCase;
+import com.example.msa.product.application.port.out.ProductPersistencePort;
 import com.example.msa.product.domain.Product;
-import com.example.msa.product.dto.ProductCreateRequest;
-import com.example.msa.product.dto.ProductUpdateRequest;
-import com.example.msa.product.repository.ProductRepository;
-import lombok.RequiredArgsConstructor;
+import com.example.msa.product.adapter.in.web.dto.ProductCreateRequest;
+import com.example.msa.product.adapter.in.web.dto.ProductUpdateRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,15 +15,18 @@ import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
-public class ProductServiceImpl implements ProductService{
+public class ProductService implements ProductUseCase {
 
-    private ProductRepository productRepository;
+    private final ProductPersistencePort productPersistenPort;
+
+    public ProductService(ProductPersistencePort productPersistenPort) {
+        this.productPersistenPort = productPersistenPort;
+    }
 
     @Override
     @Transactional
     public Product create(ProductCreateRequest request) {
-        Product.create(
+        Product product = Product.create(
                 toUuid(request.sellerId(), "sellerId"),
                 request.name(),
                 request.description(),
@@ -32,7 +35,7 @@ public class ProductServiceImpl implements ProductService{
                 request.status(),
                 toUuid(request.creatorId(), "creatorId")
         );
-        return null;
+        return productPersistenPort.save(product);
     }
 
     @Override
@@ -42,7 +45,7 @@ public class ProductServiceImpl implements ProductService{
 
     @Override
     public List<Product> getAll() {
-        return productRepository.findAll();
+        return productPersistenPort.findAll();
     }
 
     @Override
@@ -65,7 +68,7 @@ public class ProductServiceImpl implements ProductService{
     @Transactional
     public void delete(UUID productId) {
         Product product = findByIdOrThrow(productId);
-        productRepository.delete(product);
+        productPersistenPort.delete(product);
     }
 
     private UUID toUuid(String value, String fieldName) {
@@ -77,7 +80,7 @@ public class ProductServiceImpl implements ProductService{
     }
 
     private Product findByIdOrThrow(UUID productId) {
-        return productRepository.findById(productId)
+        return productPersistenPort.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
     }
 }
