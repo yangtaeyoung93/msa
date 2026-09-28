@@ -1,6 +1,6 @@
-package com.example.msa.product.adapter.out.persistence;
+package com.example.msa.infrastructure.persistence;
 
-import com.example.msa.product.domain.Product;
+import com.example.msa.product.domain.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;

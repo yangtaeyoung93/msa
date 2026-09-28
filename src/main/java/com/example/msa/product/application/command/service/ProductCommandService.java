@@ -1,26 +1,27 @@
-package com.example.msa.product.application.service;
+package com.example.msa.product.application.command.service;
 
-import com.example.msa.product.application.port.in.ProductUseCase;
-import com.example.msa.product.application.port.out.ProductPersistencePort;
-import com.example.msa.product.domain.Product;
-import com.example.msa.product.adapter.in.web.dto.ProductCreateRequest;
-import com.example.msa.product.adapter.in.web.dto.ProductUpdateRequest;
+import com.example.msa.presentaion.dto.request.ProductCreateRequest;
+import com.example.msa.presentaion.dto.request.ProductUpdateRequest;
+import com.example.msa.product.application.command.usecase.ProductCommandUseCase;
+import com.example.msa.product.application.exception.ProductNotfoundException;
+import com.example.msa.product.domain.model.Product;
+import com.example.msa.product.domain.repository.command.ProductCommandRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
-public class ProductService implements ProductUseCase {
+public class ProductCommandService implements ProductCommandUseCase {
 
-    private final ProductPersistencePort productPersistenPort;
+    private final ProductCommandRepository productCommandRepository;
 
-    public ProductService(ProductPersistencePort productPersistenPort) {
-        this.productPersistenPort = productPersistenPort;
+
+    public ProductCommandService(ProductCommandRepository productCommandRepository) {
+        this.productCommandRepository = productCommandRepository;
     }
 
     @Override
@@ -35,17 +36,7 @@ public class ProductService implements ProductUseCase {
                 request.status(),
                 toUuid(request.creatorId(), "creatorId")
         );
-        return productPersistenPort.save(product);
-    }
-
-    @Override
-    public Product getById(UUID productId) {
-        return findByIdOrThrow(productId);
-    }
-
-    @Override
-    public List<Product> getAll() {
-        return productPersistenPort.findAll();
+        return productCommandRepository.save(product);
     }
 
     @Override
@@ -67,8 +58,7 @@ public class ProductService implements ProductUseCase {
     @Override
     @Transactional
     public void delete(UUID productId) {
-        Product product = findByIdOrThrow(productId);
-        productPersistenPort.delete(product);
+        productCommandRepository.delete(findByIdOrThrow(productId));
     }
 
     private UUID toUuid(String value, String fieldName) {
@@ -80,7 +70,7 @@ public class ProductService implements ProductUseCase {
     }
 
     private Product findByIdOrThrow(UUID productId) {
-        return productPersistenPort.findById(productId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+        return productCommandRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotfoundException(productId));
     }
 }
