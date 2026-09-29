@@ -1,5 +1,6 @@
 package com.example.msa.product.domain.model;
 
+import com.example.msa.product.application.exception.InsufficientStockException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -34,5 +35,18 @@ public class Stock {
 
     public void changeStock(Integer quantity) {
         this.stock = quantity;
+    }
+
+    // 주문 시 재고 차감.
+    public void decrease(int quantity) {
+        if (quantity > this.stock) {
+            throw new InsufficientStockException(this.id, quantity, this.stock);
+        }
+        this.stock -= quantity;
+    }
+
+    // 주문 취소 시 재고 복원.
+    public void increase(int quantity) {
+        this.stock += quantity;
     }
 }

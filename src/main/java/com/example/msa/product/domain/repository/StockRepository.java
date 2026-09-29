@@ -12,6 +12,8 @@ public interface StockRepository {
 
     Optional<Stock> findById(UUID productId);
 
+    Optional<Stock> findByIdForUpdate(UUID productId);
+
     List<Stock> findAllById(Collection<UUID> productIds);
 
     void deleteById(UUID productId);

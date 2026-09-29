@@ -1,6 +1,10 @@
 package com.example.msa.product.infrastructure.event;
 
+import com.example.msa.order.application.event.OrderCanceledEvent;
+import com.example.msa.order.application.event.OrderCreatedEvent;
+import com.example.msa.order.application.event.OrderEventItem;
 import com.example.msa.product.application.event.ProductCreatedEvent;
+import com.example.msa.product.application.exception.InsufficientStockException;
 import com.example.msa.product.application.event.ProductDeletedEvent;
 import com.example.msa.product.application.event.ProductUpdatedEvent;
 import com.example.msa.product.domain.model.Stock;
@@ -10,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -44,5 +50,31 @@ public class StockEventHandler {
         if (stockRepository.findById(event.productId()).isPresent()) {
             stockRepository.deleteById(event.productId());
         }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void handle(OrderCreatedEvent event) {
+        for (OrderEventItem item : sortedByProductId(event.items())) {
+            Stock stock = stockRepository.findByIdForUpdate(item.productId())
+                    .orElseThrow(() -> new InsufficientStockException(item.productId(), item.quantity(), 0));
+            stock.decrease(item.quantity());
+            stockRepository.save(stock);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void handle(OrderCanceledEvent event) {
+        for (OrderEventItem item : sortedByProductId(event.items())) {
+            stockRepository.findByIdForUpdate(item.productId()).ifPresent(stock -> {
+                stock.increase(item.quantity());
+                stockRepository.save(stock);
+            });
+        }
+    }
+
+    private List<OrderEventItem> sortedByProductId(List<OrderEventItem> items) {
+        return items.stream()
+                .sorted(Comparator.comparing(OrderEventItem::productId))
+                .toList();
     }
 }

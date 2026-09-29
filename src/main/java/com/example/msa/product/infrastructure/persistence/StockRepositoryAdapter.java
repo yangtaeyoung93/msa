@@ -27,6 +27,11 @@ public class StockRepositoryAdapter implements StockRepository {
     }
 
     @Override
+    public Optional<Stock> findByIdForUpdate(UUID productId) {
+        return stockJpaRepository.findByIdForUpdate(productId);
+    }
+
+    @Override
     public List<Stock> findAllById(Collection<UUID> productIds) {
         return stockJpaRepository.findAllById(productIds);
     }
