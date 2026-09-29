@@ -27,9 +27,6 @@ public class Product {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false)
-    private Integer stock;
-
     @Column(nullable = false, length = 20)
     private String status;
 
@@ -53,25 +50,23 @@ public class Product {
                    String name,
                    String description,
                    BigDecimal price,
-                   Integer stock,
                    String status) {
         this.id = id;
         this.sellerId = sellerId;
         this.name = name;
         this.description = description;
         this.price = price;
-        this.stock = stock;
         this.status = status;
     }
 
+    // 재고는 Stock 도메인에서 이벤트로 별도 관리하므로 Product는 재고를 갖지 않는다.
     public static Product create(UUID sellerId,
                                  String name,
                                  String description,
                                  BigDecimal price,
-                                 Integer stock,
                                  String status,
                                  UUID creatorId){
-        Product product = new Product(UUID.randomUUID(), sellerId, name, description, price, stock, status);
+        Product product = new Product(UUID.randomUUID(), sellerId, name, description, price, status);
         product.regId = creatorId;
         product.modifyId = creatorId;
         return product;
@@ -80,13 +75,11 @@ public class Product {
     public void update(String name,
                        String description,
                        BigDecimal price,
-                       Integer stock,
                        String status,
                        UUID modifyId){
         this.name = name;
         this.description = description;
         this.price = price;
-        this.stock = stock;
         this.status = status;
         this.modifyId =  modifyId;
     }
@@ -110,9 +103,6 @@ public class Product {
         }
         if (status == null) {
             status = "ACTIVE";
-        }
-        if (stock == null) {
-            stock = 0;
         }
     }
 
