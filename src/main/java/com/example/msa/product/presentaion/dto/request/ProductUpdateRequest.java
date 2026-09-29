@@ -1,4 +1,4 @@
-package com.example.msa.presentaion.dto.request;
+package com.example.msa.product.presentaion.dto.request;
 
 import java.math.BigDecimal;
 

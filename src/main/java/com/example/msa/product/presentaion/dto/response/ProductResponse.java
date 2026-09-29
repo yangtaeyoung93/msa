@@ -1,5 +1,6 @@
-package com.example.msa.presentaion.dto.response;
+package com.example.msa.product.presentaion.dto.response;
 
+import com.example.msa.product.application.dto.ProductWithStock;
 import com.example.msa.product.domain.model.Product;
 
 import java.math.BigDecimal;
@@ -20,14 +21,15 @@ public record ProductResponse(
         LocalDateTime modifyDt
 ) {
 
-    public static ProductResponse from(Product product) {
+    public static ProductResponse from(ProductWithStock productWithStock) {
+        Product product = productWithStock.product();
         return new ProductResponse(
                 product.getId(),
                 product.getSellerId(),
                 product.getName(),
                 product.getDescription(),
                 product.getPrice(),
-                product.getStock(),
+                productWithStock.stock(),
                 product.getStatus(),
                 product.getRegId(),
                 product.getRegDt(),

@@ -1,19 +1,19 @@
-package com.example.msa.infrastructure.persistence.command;
+package com.example.msa.product.infrastructure.persistence;
 
-import com.example.msa.infrastructure.persistence.ProductJpaRepository;
 import com.example.msa.product.domain.model.Product;
-import com.example.msa.product.domain.repository.command.ProductCommandRepository;
+import com.example.msa.product.domain.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
-public class ProductCommandRepositoryAdapter implements ProductCommandRepository {
+public class ProductRepositoryAdapter implements ProductRepository {
 
-    private ProductJpaRepository productJpaRepository;
+    private final ProductJpaRepository productJpaRepository;
 
 
     @Override
@@ -30,5 +30,10 @@ public class ProductCommandRepositoryAdapter implements ProductCommandRepository
     public void delete(Product product) {
         productJpaRepository.delete(product);
 
+    }
+
+    @Override
+    public List<Product> findAll() {
+        return productJpaRepository.findAll();
     }
 }
