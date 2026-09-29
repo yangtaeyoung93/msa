@@ -1,6 +1,10 @@
 package com.example.msa.product.infrastructure.event;
 
+import com.example.msa.order.application.event.OrderCanceledEvent;
+import com.example.msa.order.application.event.OrderCreatedEvent;
+import com.example.msa.order.application.event.OrderEventItem;
 import com.example.msa.product.application.event.ProductCreatedEvent;
+import com.example.msa.product.application.exception.InsufficientStockException;
 import com.example.msa.product.application.event.ProductDeletedEvent;
 import com.example.msa.product.application.event.ProductUpdatedEvent;
 import com.example.msa.product.domain.model.Stock;
@@ -9,16 +13,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -154,5 +161,94 @@ class StockEventHandlerTest {
                 stockEventHandler.handle(new ProductDeletedEvent(productId, UUID.randomUUID())))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("DB 오류");
+    }
+
+    // ===== OrderCreatedEvent =====
+
+    @Test
+    @DisplayName("주문 생성 이벤트: 항목마다 락 조회 후 재고를 차감해 저장한다")
+    void handleOrderCreated_decreasesStockPerItem() {
+        UUID p1 = UUID.randomUUID();
+        UUID p2 = UUID.randomUUID();
+        Stock s1 = Stock.create(p1, 10);
+        Stock s2 = Stock.create(p2, 5);
+        when(stockRepository.findByIdForUpdate(p1)).thenReturn(Optional.of(s1));
+        when(stockRepository.findByIdForUpdate(p2)).thenReturn(Optional.of(s2));
+
+        stockEventHandler.handle(new OrderCreatedEvent(UUID.randomUUID(), UUID.randomUUID(),
+                List.of(new OrderEventItem(p1, 3), new OrderEventItem(p2, 5))));
+
+        assertThat(s1.getStock()).isEqualTo(7);
+        assertThat(s2.getStock()).isZero();
+        verify(stockRepository).save(s1);
+        verify(stockRepository).save(s2);
+    }
+
+    @Test
+    @DisplayName("주문 생성 이벤트: productId 오름차순으로 락을 잡는다 (데드락 방지)")
+    void handleOrderCreated_locksInProductIdOrder() {
+        UUID low = new UUID(0L, 1L);
+        UUID high = new UUID(0L, 2L);
+        when(stockRepository.findByIdForUpdate(low)).thenReturn(Optional.of(Stock.create(low, 10)));
+        when(stockRepository.findByIdForUpdate(high)).thenReturn(Optional.of(Stock.create(high, 10)));
+
+        // 이벤트에는 역순으로 담겨 있어도 처리는 오름차순이어야 한다.
+        stockEventHandler.handle(new OrderCreatedEvent(UUID.randomUUID(), UUID.randomUUID(),
+                List.of(new OrderEventItem(high, 1), new OrderEventItem(low, 1))));
+
+        InOrder inOrder = inOrder(stockRepository);
+        inOrder.verify(stockRepository).findByIdForUpdate(low);
+        inOrder.verify(stockRepository).findByIdForUpdate(high);
+    }
+
+    @Test
+    @DisplayName("주문 생성 이벤트: 재고가 부족하면 InsufficientStockException을 전파한다 (주문 롤백)")
+    void handleOrderCreated_insufficient_propagates() {
+        UUID productId = UUID.randomUUID();
+        when(stockRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(Stock.create(productId, 1)));
+
+        assertThatThrownBy(() -> stockEventHandler.handle(new OrderCreatedEvent(UUID.randomUUID(),
+                UUID.randomUUID(), List.of(new OrderEventItem(productId, 2)))))
+                .isInstanceOf(InsufficientStockException.class);
+        verify(stockRepository, never()).save(any(Stock.class));
+    }
+
+    @Test
+    @DisplayName("주문 생성 이벤트: 재고 행이 없으면 InsufficientStockException을 전파한다")
+    void handleOrderCreated_noStockRow_propagates() {
+        UUID productId = UUID.randomUUID();
+        when(stockRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> stockEventHandler.handle(new OrderCreatedEvent(UUID.randomUUID(),
+                UUID.randomUUID(), List.of(new OrderEventItem(productId, 1)))))
+                .isInstanceOf(InsufficientStockException.class);
+    }
+
+    // ===== OrderCanceledEvent =====
+
+    @Test
+    @DisplayName("주문 취소 이벤트: 항목마다 재고를 복원해 저장한다")
+    void handleOrderCanceled_increasesStockPerItem() {
+        UUID productId = UUID.randomUUID();
+        Stock stock = Stock.create(productId, 4);
+        when(stockRepository.findByIdForUpdate(productId)).thenReturn(Optional.of(stock));
+
+        stockEventHandler.handle(new OrderCanceledEvent(UUID.randomUUID(), UUID.randomUUID(),
+                List.of(new OrderEventItem(productId, 3))));
+
+        assertThat(stock.getStock()).isEqualTo(7);
+        verify(stockRepository).save(stock);
+    }
+
+    @Test
+    @DisplayName("주문 취소 이벤트: 재고 행이 없으면 무시한다")
+    void handleOrderCanceled_noStockRow_ignores() {
+        UUID productId = UUID.randomUUID();
+        when(stockRepository.findByIdForUpdate(productId)).thenReturn(Optional.empty());
+
+        stockEventHandler.handle(new OrderCanceledEvent(UUID.randomUUID(), UUID.randomUUID(),
+                List.of(new OrderEventItem(productId, 3))));
+
+        verify(stockRepository, never()).save(any(Stock.class));
     }
 }

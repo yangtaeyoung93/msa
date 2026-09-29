@@ -1,6 +1,8 @@
 package com.example.msa.order.domain.model;
 
 import com.example.msa.order.application.exception.OrderAlreadyCanceledException;
+import com.example.msa.order.application.exception.OrderNotCancelableException;
+import com.example.msa.order.application.exception.OrderNotPayableException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -75,9 +77,23 @@ public class Order {
         this.totalPrice = this.totalPrice.add(item.subtotal());
     }
 
+    // 결제 대기(CREATED) 상태의 주문만 결제 완료로 바꿀 수 있다.
+    public void markPaid(UUID actorId) {
+        if (this.status != OrderStatus.CREATED) {
+            throw new OrderNotPayableException(this.id, this.status);
+        }
+        this.status = OrderStatus.PAID;
+        this.modifyId = actorId;
+        this.modifyDt = LocalDateTime.now();
+    }
+
     public void cancel(UUID actorId) {
         if (this.status == OrderStatus.CANCELED) {
             throw new OrderAlreadyCanceledException(this.id);
+        }
+        // 환불은 범위 밖이므로 결제 완료된 주문은 취소할 수 없다.
+        if (this.status == OrderStatus.PAID) {
+            throw new OrderNotCancelableException(this.id);
         }
         this.status = OrderStatus.CANCELED;
         this.modifyId = actorId;

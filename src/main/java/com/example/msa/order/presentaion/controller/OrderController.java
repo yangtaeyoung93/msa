@@ -3,6 +3,7 @@ package com.example.msa.order.presentaion.controller;
 import com.example.msa.order.application.usecase.OrderUseCase;
 import com.example.msa.order.presentaion.dto.request.OrderCancelRequest;
 import com.example.msa.order.presentaion.dto.request.OrderCreateRequest;
+import com.example.msa.order.presentaion.dto.request.OrderPayRequest;
 import com.example.msa.order.presentaion.dto.response.OrderResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,5 +34,11 @@ public class OrderController {
     public ResponseEntity<OrderResponse> cancel(@PathVariable UUID orderId,
                                                 @RequestBody OrderCancelRequest request) {
         return ResponseEntity.ok(OrderResponse.from(orderUseCase.cancel(orderId, request)));
+    }
+
+    @PostMapping("/{orderId}/pay")
+    public ResponseEntity<OrderResponse> pay(@PathVariable UUID orderId,
+                                             @RequestBody OrderPayRequest request) {
+        return ResponseEntity.ok(OrderResponse.from(orderUseCase.pay(orderId, request)));
     }
 }

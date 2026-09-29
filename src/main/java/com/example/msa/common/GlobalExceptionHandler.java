@@ -1,7 +1,14 @@
 package com.example.msa.common;
 
 import com.example.msa.order.application.exception.OrderAlreadyCanceledException;
+import com.example.msa.order.application.exception.OrderNotCancelableException;
 import com.example.msa.order.application.exception.OrderNotFoundException;
+import com.example.msa.order.application.exception.OrderNotPayableException;
+import com.example.msa.payment.application.exception.PaymentAmountMismatchException;
+import com.example.msa.payment.application.exception.PaymentFailedException;
+import com.example.msa.payment.application.exception.PaymentGatewayException;
+import com.example.msa.payment.application.exception.PaymentPendingException;
+import com.example.msa.payment.application.exception.UnsupportedPaymentProviderException;
 import com.example.msa.product.application.exception.InsufficientStockException;
 import com.example.msa.product.application.exception.ProductNotfoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,6 +40,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OrderAlreadyCanceledException.class)
     public ResponseEntity<ErrorResponse> orderAlreadyCanceledEx(OrderAlreadyCanceledException e, HttpServletRequest request){
         return build(HttpStatus.CONFLICT, e.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler({OrderNotPayableException.class, OrderNotCancelableException.class,
+            PaymentAmountMismatchException.class, PaymentPendingException.class})
+    public ResponseEntity<ErrorResponse> paymentConflictEx(RuntimeException e, HttpServletRequest request){
+        return build(HttpStatus.CONFLICT, e.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(PaymentFailedException.class)
+    public ResponseEntity<ErrorResponse> paymentFailedEx(PaymentFailedException e, HttpServletRequest request){
+        return build(HttpStatus.PAYMENT_REQUIRED, e.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(UnsupportedPaymentProviderException.class)
+    public ResponseEntity<ErrorResponse> unsupportedPaymentProviderEx(UnsupportedPaymentProviderException e, HttpServletRequest request){
+        return build(HttpStatus.BAD_REQUEST, e.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(PaymentGatewayException.class)
+    public ResponseEntity<ErrorResponse> paymentGatewayEx(PaymentGatewayException e, HttpServletRequest request){
+        return build(HttpStatus.BAD_GATEWAY, e.getMessage(), request.getRequestURI());
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, String path) {
