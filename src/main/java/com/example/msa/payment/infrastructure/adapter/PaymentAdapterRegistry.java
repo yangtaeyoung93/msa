@@ -1,4 +1,4 @@
-package com.example.msa.payment.infrastructure.gateway;
+package com.example.msa.payment.infrastructure.adapter;
 
 import com.example.msa.payment.application.exception.UnsupportedPaymentProviderException;
 import com.example.msa.payment.domain.gateway.PaymentGateway;
@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class PaymentGatewayRegistry {
+public class PaymentAdapterRegistry {
 
     private final Map<PaymentProvider, PaymentGateway> gateways = new EnumMap<>(PaymentProvider.class);
 
-    public PaymentGatewayRegistry(List<PaymentGateway> gatewayList) {
+    public PaymentAdapterRegistry(List<PaymentGateway> gatewayList) {
         for (PaymentGateway gateway : gatewayList) {
             if (gateways.put(gateway.provider(), gateway) != null) {
                 throw new IllegalStateException("결제사 게이트웨이가 중복 등록되었습니다. provider = " + gateway.provider());
