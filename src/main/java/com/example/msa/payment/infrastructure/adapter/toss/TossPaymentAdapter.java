@@ -39,7 +39,7 @@ public class TossPaymentAdapter implements PaymentGateway {
         return restClient.post()                                            // ← 결과를 반환
                 .uri("/v1/payments/confirm")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("Idempotency-Key", command.paymentKey())
+                .header("Authorization", command.paymentKey())
                 .body(body)
                 .exchange((req, res) -> {
                     if (res.getStatusCode().is2xxSuccessful()) {
