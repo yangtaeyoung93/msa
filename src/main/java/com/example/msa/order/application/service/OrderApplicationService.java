@@ -25,7 +25,7 @@ import com.example.msa.payment.domain.model.PaymentProvider;
 import com.example.msa.payment.domain.model.PaymentResult;
 import com.example.msa.payment.domain.model.PaymentStatus;
 import com.example.msa.payment.domain.repository.PaymentRepository;
-import com.example.msa.payment.infrastructure.gateway.PaymentGatewayRegistry;
+import com.example.msa.payment.infrastructure.adapter.PaymentAdapterRegistry;
 import com.example.msa.product.application.exception.ProductNotfoundException;
 import com.example.msa.product.domain.model.Product;
 import com.example.msa.product.domain.repository.ProductRepository;
@@ -52,7 +52,7 @@ public class OrderApplicationService implements OrderUseCase {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final PaymentGatewayRegistry paymentGatewayRegistry;
+    private final PaymentAdapterRegistry paymentGatewayRegistry;
     private final PaymentRepository paymentRepository;
     private final TransactionTemplate transactionTemplate;
 
